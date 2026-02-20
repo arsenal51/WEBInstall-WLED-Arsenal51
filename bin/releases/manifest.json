@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "files": [
+    {
+      "name": "firmware.bin",
+      "url": "firmware.bin",
+      "type": "firmware"
+    }
+  ]
+}
