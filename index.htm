@@ -7,97 +7,105 @@
   <meta name="theme-color" content="#222222">
   <link rel="shortcut icon" href="favicon.png">
   <link rel="stylesheet" href="style.css">
-  <title>Arsenal51 Orbiter Installer</title>
+  <title>Install Arsenal51 Orbiter</title>
   <script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
 </head>
 
 <body onload="initInstaller()">
 
-  <div class="main">
-    <h2>Install Arsenal51 Orbiter Firmware</h2>
-    <div id="unsupported" hidden>
-      <p>Sorry, your browser is not supported. Please try on Desktop Chrome or Edge.</p>
-    </div>
+  <div id="unsupported" hidden>
+    <h2>Sorry, your browser is not supported!</h2>
+    <p>Please use a Chromium-based browser (Chrome, Edge) with WebUSB enabled.</p>
+  </div>
 
-    <div id="installerContainer">
-      <p>Select a release and hit Install:</p>
-      <select id="releaseDropdown" class="btn"></select>
+  <div class="main" id="installer" hidden>
+    <h2>Install Arsenal51 Orbiter</h2>
+    <ol>
+      <li>Plug in your ESP32 to a USB port.</li>
+      <li>Select the firmware version below.</li>
+      <li>Hit "Install" to flash your board.</li>
+    </ol>
 
-      <div class="container inst-button">
-        <esp-web-install-button id="inst" manifest="">
-          <button class="btn" slot="activate">Install Arsenal51 Orbiter</button>
-        </esp-web-install-button>
-      </div>
-    </div>
-
+    <label for="firmwareSelect">Select Version:</label>
+    <select id="firmwareSelect" class="btn">
+      <option value="">Loading latest releases...</option>
+    </select>
     <br><br>
+
+    <div class="container inst-button">
+      <esp-web-install-button id="inst" manifest="">
+        <button class="btn" slot="activate">Install</button>
+      </esp-web-install-button>
+    </div>
+    <br>
     <span>Powered by </span>
     <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
   </div>
 
   <script>
-    const owner = "arsenal51";
-    const repo = "WLED-Arsenal51";
-    const dropdown = document.getElementById("releaseDropdown");
-    const installer = document.getElementById("inst");
-    const unsupported = document.getElementById("unsupported");
-    const installerContainer = document.getElementById("installerContainer");
+    async function initInstaller() {
+      // WebUSB check for modern browsers
+      if (!('usb' in navigator || 'USB' in window)) {
+        document.getElementById('unsupported').hidden = false;
+        return;
+      }
 
-    async function fetchReleases() {
+      const installerDiv = document.getElementById('installer');
+      installerDiv.hidden = false;
+
+      const select = document.getElementById('firmwareSelect');
+      const githubApi = 'https://api.github.com/repos/arsenal51/WLED-Arsenal51/releases';
+
       try {
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases`);
+        const response = await fetch(githubApi);
+        if (!response.ok) throw new Error('Failed to fetch releases');
         const releases = await response.json();
 
-        if (!Array.isArray(releases) || releases.length === 0) throw new Error("No releases found");
+        select.innerHTML = '';
 
-        dropdown.innerHTML = "";
-
-        releases.forEach(release => {
-          const orbiterBin = release.assets.find(asset =>
-            /^ORBITER_\d+\.\d+\.\d+_ESP32\.bin$/.test(asset.name)
-          );
-          if (!orbiterBin) return;
-
-          const option = document.createElement("option");
-          option.value = orbiterBin.browser_download_url;
-          option.textContent = release.name + " → " + orbiterBin.name;
-          dropdown.appendChild(option);
+        // Iterate releases and find .bin files
+        releases.forEach(rel => {
+          rel.assets.forEach(asset => {
+            if (asset.name.endsWith('.bin')) {
+              const option = document.createElement('option');
+              option.value = asset.browser_download_url;
+              option.textContent = asset.name.replace('ORBITER_', '');
+              select.appendChild(option);
+            }
+          });
         });
 
-        // Select latest release by default
-        dropdown.selectedIndex = 0;
-        setManifest();
+        // Auto-select the first/latest version
+        if (select.options.length > 0) {
+          select.selectedIndex = 0;
+          updateManifest(select.value);
+        }
 
-      } catch (err) {
-        console.error("Failed to fetch releases:", err);
-        dropdown.innerHTML = "<option disabled>Failed to load releases</option>";
+        // Update manifest on selection change
+        select.addEventListener('change', () => {
+          updateManifest(select.value);
+        });
+
+      } catch (e) {
+        select.innerHTML = '<option value="">Failed to load releases</option>';
+        console.error(e);
       }
     }
 
-    function setManifest() {
-      const binUrl = dropdown.value;
-      if (!binUrl) return;
-
+    function updateManifest(binUrl) {
+      // Simple manifest for ESP Web Installer
       const manifest = {
-        "name": "Arsenal51 Orbiter",
-        "version": dropdown.options[dropdown.selectedIndex].text,
-        "parts": [{ "path": binUrl, "board": "esp32" }]
+        name: "Arsenal51 Orbiter",
+        board: "esp32",
+        version: "latest",
+        files: [
+          {
+            name: binUrl.split('/').pop(),
+            url: binUrl
+          }
+        ]
       };
-
-      installer.manifest = manifest;
-    }
-
-    dropdown.addEventListener("change", setManifest);
-
-    function initInstaller() {
-      if (!checkSupported()) {
-        unsupported.hidden = false;
-        installerContainer.hidden = true;
-      } else {
-        unsupported.hidden = true;
-        installerContainer.hidden = false;
-        fetchReleases();
-      }
+      document.getElementById('inst').manifest = 'data:application/json;base64,' + btoa(JSON.stringify(manifest));
     }
   </script>
 
