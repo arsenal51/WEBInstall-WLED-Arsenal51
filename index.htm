@@ -7,16 +7,12 @@
   <title>Orbiter Update Installer</title>
 
   <link rel="icon" type="image/png" href="favicon.png">
-
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         integrity="sha512-g9C6d0AqR7XzQ8Sh..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
   <link rel="stylesheet" href="style.css">
 
-  <script type="module"
-    src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
 </head>
 
 <body onload="initInstaller()">
@@ -46,6 +42,9 @@
     <div class="steps">
       <div>1. Plug in your Orbiter device</div>
       <div>2. Select firmware file (.bin)</div>
+      <span class="version-warning">
+        * Firmware name must contain a version (e.g. 1.0.0)
+      </span>
       <div>3. Press Install and follow prompts</div>
     </div>
 
@@ -55,7 +54,7 @@
       <div class="drag-text">Or drag and drop your file here</div>
     </label>
 
-    <esp-web-install-button id="inst" manifest="data:application/json,{}">
+    <esp-web-install-button id="inst" manifest="data:application/json,{}" product="Orbiter" version="Detecting...">
       <button class="install-btn" slot="activate" disabled>Install Firmware</button>
     </esp-web-install-button>
 
@@ -87,10 +86,8 @@
     }
 
     installerDiv.hidden = false;
-
     let oldManifestURL = null;
 
-    // We make this async to handle the fetch() calls for bootloader/partitions
     async function handleFile(fileList) {
       if (!fileList || fileList.length === 0) return;
 
@@ -100,40 +97,43 @@
         return;
       }
 
-      // UI Feedback
-      fileLabel.textContent = "Preparing files...";
+      const versionMatch = file.name.match(/(\d+\.\d+\.?\d*)/);
+      if (!versionMatch) {
+        alert('Error: Firmware name must contain a version number (e.g. 1.0.0).');
+        fileLabel.textContent = "Select Firmware (.bin)";
+        installBtn.disabled = true;
+        return;
+      }
+      const detectedVersion = versionMatch[0];
+
+      fileLabel.textContent = "Loading " + file.name;
       installBtn.disabled = true;
 
       try {
-        // 1. Fetch support files from your /bin/ directory
         const [bootRes, partRes] = await Promise.all([
           fetch('./bin/bootloader.bin'),
           fetch('./bin/partitions.bin')
         ]);
 
         if (!bootRes.ok || !partRes.ok) {
-          throw new Error("Could not find bootloader.bin or partitions.bin in /bin/ folder");
+          throw new Error("Could not load /bin/bootloader.bin or /bin/partitions.bin from server.");
         }
 
         const bootBlob = await bootRes.blob();
         const partBlob = await partRes.blob();
 
-        // 2. Create Blob URLs
         const bootURL = URL.createObjectURL(bootBlob);
         const partURL = URL.createObjectURL(partBlob);
         const firmwareURL = URL.createObjectURL(file);
 
-        // Update UI
         fileLabel.textContent = file.name;
-        fileLabel.title = file.name;
-
-        // Pass the uploaded file to the ESP Web Tools input
         installerButton.files = fileList;
 
-        // 3. Multi-part manifest for ESP32
         const manifest = {
           name: "Orbiter Firmware",
-          version: "1.0.0",
+          version: detectedVersion,
+          improv_type: "ble_wifi", 
+          home_assistant_domain: "a51orbiter",        // Better Wi-Fi detection
           erase_flash: true,
           builds: [
             {
@@ -147,57 +147,44 @@
           ]
         };
 
-        // 4. Convert manifest to Blob URL
         const json = JSON.stringify(manifest);
         const blob = new Blob([json], { type: "application/json" });
         const blobURL = URL.createObjectURL(blob);
 
-        // Revoke previous Blob URL
         if (oldManifestURL) URL.revokeObjectURL(oldManifestURL);
         oldManifestURL = blobURL;
 
-        // Assign manifest
+        installerButton.setAttribute('version', detectedVersion);
         installerButton.setAttribute('manifest', blobURL);
         installerButton.manifest = blobURL;
         
-        // Re-enable button
         installBtn.disabled = false;
 
       } catch (err) {
         console.error(err);
-        alert("Setup failed: " + err.message);
+        alert("Setup Error: " + err.message);
         fileLabel.textContent = "Select Firmware (.bin)";
       }
     }
 
-    // File input selection
     firmwareInput.addEventListener('change', () => handleFile(firmwareInput.files));
-
-    // Drag & drop support
-    fileDrop.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      fileDrop.classList.add('dragover');
-    });
-
+    fileDrop.addEventListener('dragover', (e) => { e.preventDefault(); fileDrop.classList.add('dragover'); });
     fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
-
     fileDrop.addEventListener('drop', (e) => {
       e.preventDefault();
       fileDrop.classList.remove('dragover');
       handleFile(e.dataTransfer.files);
     });
 
-    // Installer events
-    installerButton.addEventListener('install-complete', () => {
-      alert('Installation complete!');
+    // Custom complete logic to help with the Wi-Fi "Race Condition"
+    installerButton.addEventListener('install-complete', () => { 
+      setTimeout(() => {
+        alert('Installation complete! If Wi-Fi setup does not appear, click "Next" or tap the Reset button on your Orbiter.');
+      }, 1500);
     });
 
-    installerButton.addEventListener('install-error', (e) => {
-      alert('Firmware installation failed: ' + e.detail.message);
-    });
-
-    installerButton.addEventListener('install-progress', (e) => {
-      console.log(`Progress: ${(e.detail.progress * 100).toFixed(1)}%`);
+    installerButton.addEventListener('install-error', (e) => { 
+      alert('Firmware installation failed: ' + e.detail.message); 
     });
   }
   </script>
