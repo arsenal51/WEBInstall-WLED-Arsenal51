@@ -3,82 +3,159 @@
 
 <head>
   <meta charset="utf-8">
-  <meta content='width=device-width' name='viewport'>
-  <meta name="theme-color" content="#222222">
-  <link rel="shortcut icon" href="favicon.png">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Install Arsenal51 Orbiter</title>
-  <script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Barlow Bold -->
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for Social Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
+        integrity="sha512-g9C6d0AqR7XzQ8Sh..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ESP Web Tools -->
+  <script type="module"
+    src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
 </head>
 
 <body onload="initInstaller()">
 
-  <div id="unsupported" hidden>
-    <h2>Sorry, your browser is not supported!</h2>
-    <p>Please use a Chromium-based browser (Chrome, Edge) with WebUSB enabled.</p>
+  <div id="unsupported" class="card" hidden>
+    <h2>Browser Not Supported</h2>
+    <p>Please use Chrome or Edge on desktop.</p>
+    <div class="browser-buttons">
+      <button onclick="window.open('microsoft-edge:', '_blank')">Open Edge</button>
+      <button onclick="window.open('https://www.google.com/chrome/', '_blank')">Download Chrome</button>
+    </div>
   </div>
 
-  <div class="main" id="installer" hidden>
-    <h2>Install Arsenal51 Orbiter</h2>
-    <ol>
-      <li>Plug in your ESP32 to a USB port.</li>
-      <li>Select your local firmware `.bin` file.</li>
-      <li>Hit "Install" to flash your board.</li>
-    </ol>
+  <div id="installer" class="card" hidden>
+    <!-- Logo -->
+    <img src="arsenal-logo.png" alt="Arsenal51 Logo" class="logo">
 
-    <label for="firmwareFile">Select Firmware (.bin):</label>
-    <input type="file" id="firmwareFile" accept=".bin" class="btn"><br><br>
+    <h1>Arsenal51 Orbiter</h1>
+    <p class="subtitle">Flash firmware to your ESP32</p>
 
-    <div class="container inst-button">
-      <esp-web-install-button id="inst" manifest="">
-        <button class="btn" slot="activate">Install</button>
-      </esp-web-install-button>
+    <!-- GitHub Firmware Downloads -->
+    <div class="github-download">
+      <p>Download firmware `.bin` files:</p>
+      <a href="https://github.com/arsenal51/WLED-Arsenal51/releases" target="_blank">
+        View GitHub Releases
+      </a>
     </div>
-    <br>
-    <span>Powered by </span>
-    <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
+
+    <div class="steps">
+      <div>1. Plug in your ESP32</div>
+      <div>2. Select firmware file</div>
+      <div>3. Press Install</div>
+    </div>
+
+    <label class="file-upload" id="fileDrop">
+      <input type="file" id="firmwareFile" accept=".bin" hidden>
+      <span id="fileLabel">Select Firmware (.bin)</span>
+      <div class="drag-text">Or drag and drop your file here</div>
+    </label>
+
+    <esp-web-install-button id="inst" manifest="">
+      <button class="install-btn" slot="activate" disabled>Install Firmware</button>
+    </esp-web-install-button>
+
+    <div class="powered">
+      Powered by
+      <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
+
+      <!-- Social Icons -->
+      <div class="social-icons">
+        <a href="https://docs.arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-book"></i></a>
+        <a href="https://discord.gg/h2C8yjN47M" target="_blank" class="social-icon"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-globe"></i></a>
+      </div>
+    </div>
   </div>
 
   <script>
     function initInstaller() {
-      // WebUSB check
-      if (!('usb' in navigator || 'USB' in window)) {
-        document.getElementById('unsupported').hidden = false;
+      const unsupportedDiv = document.getElementById('unsupported');
+      const installerDiv = document.getElementById('installer');
+      const firmwareInput = document.getElementById('firmwareFile');
+      const installBtn = document.querySelector('.install-btn');
+      const fileDrop = document.getElementById('fileDrop');
+      const fileLabel = document.getElementById('fileLabel');
+      let fileUrl = null;
+
+      if (!('usb' in navigator)) {
+        unsupportedDiv.hidden = false;
         return;
       }
 
-      const installerDiv = document.getElementById('installer');
       installerDiv.hidden = false;
 
-      const fileInput = document.getElementById('firmwareFile');
-      const espButton = document.getElementById('inst');
+      function handleFile(file) {
+        if (!file || !file.name.endsWith('.bin')) {
+          alert('Please select a valid .bin firmware file.');
+          return;
+        }
 
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
-        if (!file) return;
+        if (fileUrl) URL.revokeObjectURL(fileUrl);
+        fileUrl = URL.createObjectURL(file);
 
-        // Create a blob URL for the file
-        const blobUrl = URL.createObjectURL(file);
-
-        // Generate manifest for ESP Web Tools
         const manifest = {
           name: "Arsenal51 Orbiter",
-          version: file.name.replace('.bin', ''),
-          builds: [
-            {
-              chipFamily: "ESP32",
-              parts: [
-                {
-                  path: blobUrl,
-                  offset: 0
-                }
-              ]
-            }
-          ]
+          board: "esp32",
+          version: "user-upload",
+          files: [{ name: file.name, url: fileUrl }]
         };
 
-        // Set manifest as base64 data URL
-        espButton.manifest = 'data:application/json;base64,' + btoa(JSON.stringify(manifest));
+        document.getElementById('inst').manifest =
+          'data:application/json;base64,' + btoa(JSON.stringify(manifest));
+
+        installBtn.disabled = false;
+
+        fileLabel.textContent = file.name;
+        fileLabel.title = file.name;
+      }
+
+      firmwareInput.addEventListener('change', () => {
+        const files = firmwareInput.files;
+        if (!files || files.length === 0) return;
+        handleFile(files[0]);
+      });
+
+      fileDrop.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileDrop.classList.add('dragover');
+      });
+
+      fileDrop.addEventListener('dragleave', () => {
+        fileDrop.classList.remove('dragover');
+      });
+
+      fileDrop.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileDrop.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) handleFile(files[0]);
+      });
+
+      const installerButton = document.getElementById('inst');
+
+      installerButton.addEventListener('install-complete', () => {
+        if (fileUrl) URL.revokeObjectURL(fileUrl);
+        alert('Installation complete!');
+      });
+
+      installerButton.addEventListener('install-error', (e) => {
+        alert('Firmware installation failed: ' + e.detail.message);
+      });
+
+      installerButton.addEventListener('install-progress', (e) => {
+        console.log(`Progress: ${(e.detail.progress * 100).toFixed(1)}%`);
       });
     }
   </script>

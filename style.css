@@ -1,192 +1,229 @@
+/* Base Reset */
+* {
+  box-sizing: border-box;
+}
+
 body {
-    font-family: Verdana, Helvetica, sans-serif;
-    text-align: center;
-    background-color: #222;
-    margin: 0;
-    color: #fff;
-}
-
-.language-selector-container {
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 100;
-}
-
-.language-label {
-    color: #fff;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.language-select {
-    width: 150px !important;
-    margin: 0 !important;
-    background-position: 126px 17px !important;
-}
-
-select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='white'><polygon points='0,0 100,0 50,50'/></svg>") no-repeat;
-    background-size: 12px;
-    background-position: 206px 17px;
-    padding-left: 12px !important;
-    background-repeat: no-repeat;
-    outline: none;
-}
-
-select:-moz-focusring {
-    transition-duration: 0s;
-    color: transparent;
-    text-shadow: 0 0 0 #fff;
-}
-
-option {
-    background-color: var(--c-3);
-    color: var(--c-f);
-}
-
-.btn {
-    outline: none;
-    cursor: pointer;
-    padding: 8px;
-    margin: 10px;
-    width: 230px;
-    font-family: Verdana, Helvetica, sans-serif;
-    font-size: 19px;
-    background-color: #333;
-    color: white;
-    border: 0px solid white;
-    border-radius: 25px;
-}
-
-img {
-    width: 770px;
-    max-width: 80%;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    margin: 3vh 0 5px 0;
-    animation: fi 1s;
-}
-
-.disabled__label {
-    display: none;
-}
-
-
-.radio {
-    display: inline-flex;
-    overflow: hidden;
-    border-radius: 25px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0);
-
-}
-
-.radio__input {
-    display: none;
-}
-
-.radio__label {
-    padding: 8px 14px;
-    font-size: 14px;
-    font-family: sans-serif;
-    color: #ffffff;
-    background: #09f;
-    cursor: pointer;
-    transition: background 0.1s;
-}
-
-.radio__label:not(:last-of-type) {
-    border-right: 1px solid #006b50;
-}
-
-.radio__input:checked+.radio__label {
-    background: rgb(0, 95, 158);
-}
-
-@keyframes fi {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-.main {
-    animation: fi 1.5s .7s both;
-}
-
-a {
-    color: #fff;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-ol {
-    margin: auto;
-    text-align: left;
-    display: inline-block;
-}
-
-li::marker {
-    text-decoration: bold;
-    color: #09f;
-}
-
-li {
-    margin: 5px;
-}
-
-.container {
-    width: 80%;
-    max-width: 510px;
-    margin: auto;
-    border-radius: 5px;
-    box-sizing: border-box;
-    background-color: #222;
-    overflow: hidden;
-}
-
-.inst-button {
-    padding: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-    ewt-install-dialog {
-        /*--mdc-theme-primary: #ffa000; /*buttons*/
-        --mdc-theme-surface: #333;
-        --mdc-dialog-heading-ink-color: #fff;
-        --mdc-dialog-content-ink-color: #ddd;
-        --mdc-text-field-fill-color: #ddd;
-    }
-}
-#overlay {
-  position: fixed; /* Sit on top of the page content */
-  display: none; /* Hidden by default */
-  width: 100%; /* Full width (cover the whole page) */
-  height: 100%; /* Full height (cover the whole page) */
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0,0,0,0.8); /* Black background with opacity */
-  z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
-  cursor: pointer; /* Add a pointer on hover */
-}
-
-#text{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  font-size: 20px;
+  margin: 0;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 700;
+  background: #000000; /* fully black background */
   color: white;
-  transform: translate(-50%,-50%);
-  -ms-transform: translate(-50%,-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+/* Layout Container */
+.card {
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Logo */
+.logo {
+  max-width: 252px; /* increased 40% from 180px */
+  margin-bottom: 20px;
+}
+
+/* Titles */
+h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.6;
+  margin-bottom: 30px;
+}
+
+/* GitHub Releases Link */
+.github-download {
+  margin: 16px 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.github-download a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #64D5FF;
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.github-download a:hover {
+  text-decoration: underline;
+}
+
+/* Steps */
+.steps {
+  margin-bottom: 30px;
+  font-size: 13px;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* File Upload */
+.file-upload {
+  border: 2px dashed #aaa;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  margin: 20px 0;
+  border-radius: 30px;
+  transition: background 0.2s;
+  display: inline-block;
+  min-width: 250px;
+  position: relative;
+}
+
+.file-upload.dragover {
+  background-color: #1a1a1a;
+}
+
+.file-upload input {
+  display: none;
+}
+
+.file-upload span {
+  display: inline-block;
+  max-width: 100%;
+  white-space: normal;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 30px;
+  background: #64D5FF;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: transform 0.2s ease;
+}
+
+.file-upload span:hover {
+  transform: scale(1.03);
+}
+
+.file-upload span:active {
+  transform: scale(0.97);
+}
+
+/* Drag Text Below the Upload Button */
+.drag-text {
+  font-size: 12px;
+  color: #999999;
+  margin-top: 8px;
+  display: block;
+}
+
+/* Browser Buttons */
+.browser-buttons button {
+  width: 100%;
+  padding: 18px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 30px;
+  background: #64D5FF;
+  color: #ffffff;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.browser-buttons button:hover {
+  transform: scale(1.03);
+}
+
+.browser-buttons button:active {
+  transform: scale(0.97);
+}
+
+/* Install Button */
+.install-btn {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 30px;
+  background: #64D5FF;
+  color: #ffffff;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.install-btn:hover {
+  transform: scale(1.03);
+}
+
+.install-btn:active {
+  transform: scale(0.97);
+}
+
+.install-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Footer */
+.powered {
+  margin-top: 30px;
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+/* Social Icons in footer */
+.social-icons {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.social-icon {
+  color: #64D5FF;
+  font-size: 20px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.social-icon:hover {
+  transform: scale(1.2);
+  color: #ffffff;
+}
+
+.powered a {
+  color: #64D5FF;
+  text-decoration: none;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  h1 { font-size: 22px; }
+  .install-btn,
+  .file-upload span,
+  .browser-buttons button { padding: 16px; }
+  .logo { max-width: 196px; margin-bottom: 16px; } /* increased 40% from 140px */
 }
