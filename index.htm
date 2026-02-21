@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Orbiter Update Installer</title>
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Barlow Bold -->
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         integrity="sha512-g9C6d0AqR7XzQ8Sh..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <!-- External CSS -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- ESP Web Tools -->
   <script type="module"
     src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
 </head>
@@ -36,13 +30,11 @@
   </div>
 
   <div id="installer" class="card" hidden>
-    <!-- Logo -->
     <img src="arsenal-logo.png" alt="Arsenal51 Logo" class="logo">
 
     <h1>UPDATE YOUR ORBITER</h1>
     <p class="subtitle">Flash firmware to your Orbiter</p>
 
-    <!-- Optional GitHub download link -->
     <div class="github-download">
       <p>Download firmware `.bin` files (optional):</p>
       <a href="https://github.com/arsenal51/WLED-Arsenal51/releases" target="_blank">
@@ -62,7 +54,7 @@
       <div class="drag-text">Or drag and drop your file here</div>
     </label>
 
-    <esp-web-install-button id="inst">
+    <esp-web-install-button id="inst" manifest="data:application/json,{}">
       <button class="install-btn" slot="activate" disabled>Install Firmware</button>
     </esp-web-install-button>
 
@@ -70,7 +62,6 @@
       Powered by
       <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
 
-      <!-- Social Icons -->
       <div class="social-icons">
         <a href="https://docs.arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-book"></i></a>
         <a href="https://discord.gg/h2C8yjN47M" target="_blank" class="social-icon"><i class="fa-brands fa-discord"></i></a>
@@ -81,87 +72,101 @@
 
   <script>
   function initInstaller() {
-  const unsupportedDiv = document.getElementById('unsupported');
-  const installerDiv = document.getElementById('installer');
-  const firmwareInput = document.getElementById('firmwareFile');
-  const fileDrop = document.getElementById('fileDrop');
-  const fileLabel = document.getElementById('fileLabel');
-  const installBtn = document.querySelector('.install-btn');
-  const installerButton = document.getElementById('inst');
+    const unsupportedDiv = document.getElementById('unsupported');
+    const installerDiv = document.getElementById('installer');
+    const firmwareInput = document.getElementById('firmwareFile');
+    const fileDrop = document.getElementById('fileDrop');
+    const fileLabel = document.getElementById('fileLabel');
+    const installBtn = document.querySelector('.install-btn');
+    const installerButton = document.getElementById('inst');
 
-  if (!('usb' in navigator)) {
-    unsupportedDiv.hidden = false;
-    return;
-  }
-
-  installerDiv.hidden = false;
-
-  function handleFile(fileList) {
-    if (!fileList || fileList.length === 0) return;
-
-    const file = fileList[0];
-    if (!file.name.endsWith('.bin')) {
-      alert('Please select a valid .bin firmware file.');
+    if (!('usb' in navigator)) {
+      unsupportedDiv.hidden = false;
       return;
     }
 
-    fileLabel.textContent = file.name;
-    fileLabel.title = file.name;
-    installBtn.disabled = false;
+    installerDiv.hidden = false;
 
-    installerButton.files = fileList;
+    let oldManifestURL = null;
+    let oldBinaryURL = null;
 
-    const manifest = {
-      name: "Orbiter Firmware",
-      version: "1.0.0",
-      builds: [
-        {
-          chipFamily: "ESP32", 
-          parts: [
-            {
-              path: file.name,
-              offset: 0
-            }
-          ]
-        }
-      ]
-    };
+    function handleFile(fileList) {
+      if (!fileList || fileList.length === 0) return;
 
-    const json = JSON.stringify(manifest);
-    const blob = new Blob([json], { type: "application/json" });
+      const file = fileList[0];
+      if (!file.name.endsWith('.bin')) {
+        alert('Please select a valid .bin firmware file.');
+        return;
+      }
 
-    // ✅ Official documented way to assign manifest URL
-    installerButton.manifest = URL.createObjectURL(blob);
+      // Cleanup old Blob URLs from memory
+      if (oldManifestURL) URL.revokeObjectURL(oldManifestURL);
+      if (oldBinaryURL) URL.revokeObjectURL(oldBinaryURL);
+
+      // Create a Blob URL for the actual BINARY file
+      // This is the crucial fix for the "Invalid URL" error on the binary path
+      const binaryBlobURL = URL.createObjectURL(file);
+      oldBinaryURL = binaryBlobURL;
+
+      // Update UI
+      fileLabel.textContent = file.name;
+      fileLabel.title = file.name;
+      installBtn.disabled = false;
+
+      // Pass the uploaded file to the ESP Web Tools input
+      installerButton.files = fileList;
+
+      // Generate manifest with the Blob URL as the path
+      const manifest = {
+        name: "Orbiter Firmware",
+        version: "1.0.0",
+        builds: [
+          {
+            chipFamily: "ESP32",
+            parts: [
+              { path: binaryBlobURL, offset: 0 }
+            ]
+          }
+        ]
+      };
+
+      // Convert manifest to its own Blob URL
+      const json = JSON.stringify(manifest);
+      const blob = new Blob([json], { type: "application/json" });
+      const manifestURL = URL.createObjectURL(blob);
+      oldManifestURL = manifestURL;
+
+      // Assign to the component
+      installerButton.setAttribute('manifest', manifestURL);
+      installerButton.manifest = manifestURL;
+    }
+
+    // --- Listeners ---
+    firmwareInput.addEventListener('change', () => handleFile(firmwareInput.files));
+
+    fileDrop.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileDrop.classList.add('dragover');
+    });
+
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+
+    fileDrop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileDrop.classList.remove('dragover');
+      handleFile(e.dataTransfer.files);
+    });
+
+    installerButton.addEventListener('install-complete', () => {
+      alert('Installation complete!');
+    });
+
+    installerButton.addEventListener('install-error', (e) => {
+      console.error("Install Error:", e.detail);
+      alert('Firmware installation failed: ' + e.detail.message);
+    });
   }
-
-  firmwareInput.addEventListener('change', () => handleFile(firmwareInput.files));
-
-  fileDrop.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    fileDrop.classList.add('dragover');
-  });
-
-  fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
-
-  fileDrop.addEventListener('drop', (e) => {
-    e.preventDefault();
-    fileDrop.classList.remove('dragover');
-    handleFile(e.dataTransfer.files);
-  });
-
-  installerButton.addEventListener('install-complete', () => {
-    alert('Installation complete!');
-  });
-
-  installerButton.addEventListener('install-error', (e) => {
-    alert('Firmware installation failed: ' + e.detail.message);
-  });
-
-  installerButton.addEventListener('install-progress', (e) => {
-    console.log(`Progress: ${(e.detail.progress * 100).toFixed(1)}%`);
-  });
-}
-</script>
+  </script>
 
 </body>
 </html>
