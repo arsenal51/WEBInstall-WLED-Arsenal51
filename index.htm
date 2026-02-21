@@ -80,7 +80,7 @@
   </div>
 
   <script>
-function initInstaller() {
+  function initInstaller() {
   const unsupportedDiv = document.getElementById('unsupported');
   const installerDiv = document.getElementById('installer');
   const firmwareInput = document.getElementById('firmwareFile');
@@ -105,21 +105,18 @@ function initInstaller() {
       return;
     }
 
-    // Update UI
     fileLabel.textContent = file.name;
     fileLabel.title = file.name;
     installBtn.disabled = false;
 
-    // ⚡ Pass the file directly to ESP Web Tools
     installerButton.files = fileList;
 
-    // Generate a manifest JSON object (assign directly, not as URL)
     const manifest = {
       name: "Orbiter Firmware",
       version: "1.0.0",
       builds: [
         {
-          chipFamily: "ESP32", // adjust if you support ESP8266
+          chipFamily: "ESP32", 
           parts: [
             {
               path: file.name,
@@ -130,13 +127,15 @@ function initInstaller() {
       ]
     };
 
-    installerButton.manifest = manifest;
+    const json = JSON.stringify(manifest);
+    const blob = new Blob([json], { type: "application/json" });
+
+    // ✅ Official documented way to assign manifest URL
+    installerButton.manifest = URL.createObjectURL(blob);
   }
 
-  // File selection
   firmwareInput.addEventListener('change', () => handleFile(firmwareInput.files));
 
-  // Drag & drop
   fileDrop.addEventListener('dragover', (e) => {
     e.preventDefault();
     fileDrop.classList.add('dragover');
@@ -150,7 +149,6 @@ function initInstaller() {
     handleFile(e.dataTransfer.files);
   });
 
-  // Installer events
   installerButton.addEventListener('install-complete', () => {
     alert('Installation complete!');
   });
