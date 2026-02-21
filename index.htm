@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -88,9 +89,9 @@
     installerDiv.hidden = false;
 
     let oldManifestURL = null;
-    let oldBinaryURL = null;
 
-    function handleFile(fileList) {
+    // We make this async to handle the fetch() calls for bootloader/partitions
+    async function handleFile(fileList) {
       if (!fileList || fileList.length === 0) return;
 
       const file = fileList[0];
@@ -99,51 +100,79 @@
         return;
       }
 
-      // Cleanup old Blob URLs from memory
-      if (oldManifestURL) URL.revokeObjectURL(oldManifestURL);
-      if (oldBinaryURL) URL.revokeObjectURL(oldBinaryURL);
+      // UI Feedback
+      fileLabel.textContent = "Preparing files...";
+      installBtn.disabled = true;
 
-      // Create a Blob URL for the actual BINARY file
-      // This is the crucial fix for the "Invalid URL" error on the binary path
-      const binaryBlobURL = URL.createObjectURL(file);
-      oldBinaryURL = binaryBlobURL;
+      try {
+        // 1. Fetch support files from your /bin/ directory
+        const [bootRes, partRes] = await Promise.all([
+          fetch('./bin/bootloader.bin'),
+          fetch('./bin/partitions.bin')
+        ]);
 
-      // Update UI
-      fileLabel.textContent = file.name;
-      fileLabel.title = file.name;
-      installBtn.disabled = false;
+        if (!bootRes.ok || !partRes.ok) {
+          throw new Error("Could not find bootloader.bin or partitions.bin in /bin/ folder");
+        }
 
-      // Pass the uploaded file to the ESP Web Tools input
-      installerButton.files = fileList;
+        const bootBlob = await bootRes.blob();
+        const partBlob = await partRes.blob();
 
-      // Generate manifest with the standard ESP32 App offset
-      const manifest = {
-        name: "Orbiter Firmware",
-        version: "1.0.0",
-        builds: [
-          {
-            chipFamily: "ESP32", // Double check if your Orbiter is ESP32-S2 or S3!
-            parts: [
-              { path: binaryBlobURL, offset: 0x10000 } // Changed from 0 to 0x10000
-            ]
-          }
-        ]
-      };
+        // 2. Create Blob URLs
+        const bootURL = URL.createObjectURL(bootBlob);
+        const partURL = URL.createObjectURL(partBlob);
+        const firmwareURL = URL.createObjectURL(file);
 
-      // Convert manifest to its own Blob URL
-      const json = JSON.stringify(manifest);
-      const blob = new Blob([json], { type: "application/json" });
-      const manifestURL = URL.createObjectURL(blob);
-      oldManifestURL = manifestURL;
+        // Update UI
+        fileLabel.textContent = file.name;
+        fileLabel.title = file.name;
 
-      // Assign to the component
-      installerButton.setAttribute('manifest', manifestURL);
-      installerButton.manifest = manifestURL;
+        // Pass the uploaded file to the ESP Web Tools input
+        installerButton.files = fileList;
+
+        // 3. Multi-part manifest for ESP32
+        const manifest = {
+          name: "Orbiter Firmware",
+          version: "1.0.0",
+          builds: [
+            {
+              chipFamily: "ESP32",
+              parts: [
+                { path: bootURL, offset: 0x1000 },
+                { path: partURL, offset: 0x8000 },
+                { path: firmwareURL, offset: 0x10000 }
+              ]
+            }
+          ]
+        };
+
+        // 4. Convert manifest to Blob URL
+        const json = JSON.stringify(manifest);
+        const blob = new Blob([json], { type: "application/json" });
+        const blobURL = URL.createObjectURL(blob);
+
+        // Revoke previous Blob URL
+        if (oldManifestURL) URL.revokeObjectURL(oldManifestURL);
+        oldManifestURL = blobURL;
+
+        // Assign manifest
+        installerButton.setAttribute('manifest', blobURL);
+        installerButton.manifest = blobURL;
+        
+        // Re-enable button
+        installBtn.disabled = false;
+
+      } catch (err) {
+        console.error(err);
+        alert("Setup failed: " + err.message);
+        fileLabel.textContent = "Select Firmware (.bin)";
+      }
     }
 
-    // --- Listeners ---
+    // File input selection
     firmwareInput.addEventListener('change', () => handleFile(firmwareInput.files));
 
+    // Drag & drop support
     fileDrop.addEventListener('dragover', (e) => {
       e.preventDefault();
       fileDrop.classList.add('dragover');
@@ -157,13 +186,17 @@
       handleFile(e.dataTransfer.files);
     });
 
+    // Installer events
     installerButton.addEventListener('install-complete', () => {
       alert('Installation complete!');
     });
 
     installerButton.addEventListener('install-error', (e) => {
-      console.error("Install Error:", e.detail);
       alert('Firmware installation failed: ' + e.detail.message);
+    });
+
+    installerButton.addEventListener('install-progress', (e) => {
+      console.log(`Progress: ${(e.detail.progress * 100).toFixed(1)}%`);
     });
   }
   </script>
