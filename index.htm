@@ -116,15 +116,15 @@
       // Pass the uploaded file to the ESP Web Tools input
       installerButton.files = fileList;
 
-      // Generate manifest with the Blob URL as the path
+      // Generate manifest with the standard ESP32 App offset
       const manifest = {
         name: "Orbiter Firmware",
         version: "1.0.0",
         builds: [
           {
-            chipFamily: "ESP32",
+            chipFamily: "ESP32", // Double check if your Orbiter is ESP32-S2 or S3!
             parts: [
-              { path: binaryBlobURL, offset: 0 }
+              { path: binaryBlobURL, offset: 0x10000 } // Changed from 0 to 0x10000
             ]
           }
         ]
