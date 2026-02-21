@@ -80,7 +80,7 @@
   </div>
 
   <script>
-  function initInstaller() {
+function initInstaller() {
   const unsupportedDiv = document.getElementById('unsupported');
   const installerDiv = document.getElementById('installer');
   const firmwareInput = document.getElementById('firmwareFile');
@@ -113,13 +113,13 @@
     // ⚡ Pass the file directly to ESP Web Tools
     installerButton.files = fileList;
 
-    // Generate a manifest JSON dynamically
+    // Generate a manifest JSON object (assign directly, not as URL)
     const manifest = {
       name: "Orbiter Firmware",
       version: "1.0.0",
       builds: [
         {
-          chipFamily: "ESP32", // change if needed or detect from file
+          chipFamily: "ESP32", // adjust if you support ESP8266
           parts: [
             {
               path: file.name,
@@ -130,10 +130,7 @@
       ]
     };
 
-    // Create a Blob URL for the manifest and assign it
-    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-    const manifestUrl = URL.createObjectURL(manifestBlob);
-    installerButton.setAttribute('manifest', manifestUrl);
+    installerButton.manifest = manifest;
   }
 
   // File selection
