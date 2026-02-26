@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
   <title>Orbiter Update Installer</title>
 
   <link rel="icon" type="image/png" href="favicon.png">
@@ -16,59 +16,257 @@
 </head>
 
 <body onload="initInstaller()">
+  <canvas id="particleCanvas"></canvas>
 
-  <div id="unsupported" class="card" hidden>
-    <h2>Browser Not Supported</h2>
-    <p>Please use Chrome or Edge on desktop.</p>
-    <div class="browser-buttons">
-      <button onclick="window.open('microsoft-edge:', '_blank')">Open Edge</button>
-      <button onclick="window.open('https://www.google.com/chrome/', '_blank')">Download Chrome</button>
+  <div class="container">
+    <div class="logo-container">
+      <img src="arsenal-logo.png" alt="Arsenal51 Logo" class="logo">
     </div>
-  </div>
+    <div class="main">
 
-  <div id="installer" class="card" hidden>
-    <img src="arsenal-logo.png" alt="Arsenal51 Logo" class="logo">
-
-    <h1>UPDATE YOUR ORBITER</h1>
-    <p class="subtitle">Flash firmware to your Orbiter</p>
-
-    <div class="github-download">
-      <p>Download firmware `.bin` files (optional):</p>
-      <a href="https://github.com/arsenal51/WLED-Arsenal51/releases" target="_blank">
-        View GitHub Releases
-      </a>
-    </div>
-
-    <div class="steps">
-      <div>1. Plug in your Orbiter device</div>
-      <div>2. Select firmware file (.bin)</div>
-      <span class="version-warning">
-        * Firmware name must contain a version (e.g. 1.0.0)
-      </span>
-      <div>3. Press Install and follow prompts</div>
-    </div>
-
-    <label class="file-upload" id="fileDrop">
-      <input type="file" id="firmwareFile" accept=".bin" hidden>
-      <span id="fileLabel">Select Firmware (.bin)</span>
-      <div class="drag-text">Or drag and drop your file here</div>
-    </label>
-
-    <esp-web-install-button id="inst" manifest="data:application/json,{}" product="Orbiter" version="Detecting...">
-      <button class="install-btn" slot="activate" disabled>Install Firmware</button>
-    </esp-web-install-button>
-
-    <div class="powered">
-      Powered by
-      <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
-
-      <div class="social-icons">
-        <a href="https://docs.arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-book"></i></a>
-        <a href="https://discord.gg/h2C8yjN47M" target="_blank" class="social-icon"><i class="fa-brands fa-discord"></i></a>
-        <a href="https://arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-globe"></i></a>
+      <div id="unsupported" class="card" hidden>
+        <h2>Browser Not Supported</h2>
+        <p>Please use Chrome or Edge on desktop.</p>
+        <div class="browser-buttons">
+          <button onclick="window.open('microsoft-edge:', '_blank')">Open Edge</button>
+          <button onclick="window.open('https://www.google.com/chrome/', '_blank')">Download Chrome</button>
+        </div>
       </div>
+
+      <div id="installer" class="card" hidden>
+        <h1>UPDATE YOUR ORBITER</h1>
+        <p class="subtitle">Flash firmware to your Orbiter</p>
+
+        <div class="github-download">
+          <a href="https://github.com/arsenal51/WLED-Arsenal51/releases" target="_blank">
+            View GitHub Releases
+          </a>
+        </div>
+
+        <div class="steps">
+          <div class="step-item">Download firmware `.bin` files (optional)</div>
+          <div class="step-item">Plug in your Orbiter device</div>
+          <div class="step-item">Select firmware file (.bin)</div>
+          <div class="step-item">Press Install and follow prompts</div>
+        </div>
+
+        <label class="file-upload" id="fileDrop">
+          <input type="file" id="firmwareFile" accept=".bin" hidden>
+          <span id="fileLabel">Select Firmware (.bin)</span>
+          <div class="drag-text">Or drag and drop your file here</div>
+        </label>
+
+        <esp-web-install-button id="inst" manifest="data:application/json,{}" product="Orbiter" version="Detecting...">
+          <button class="install-btn" slot="activate" disabled>Install Firmware</button>
+        </esp-web-install-button>
+
+        <div class="version-warning">* Firmware name must contain a version (e.g. 1.0.0)</div>
+
+        <div class="powered">
+          Powered by
+          <a href="https://esphome.github.io/esp-web-tools/" target="_blank">ESP Web Tools</a>
+
+          <div class="social-icons">
+            <a href="https://docs.arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-book"></i></a>
+            <a href="https://discord.gg/h2C8yjN47M" target="_blank" class="social-icon"><i class="fa-brands fa-discord"></i></a>
+            <a href="https://arsenal51.com" target="_blank" class="social-icon"><i class="fa-solid fa-globe"></i></a>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+
+  <script>
+    // Enhanced particle animation system
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let particles = [];
+    let connections = [];
+    let mouseX = 0;
+    let mouseY = 0;
+    let time = 0;
+    
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    
+    class Particle {
+        constructor(type = 'normal') {
+            this.type = type;
+            this.reset();
+        }
+        
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = this.type === 'large' ? Math.random() * 3 + 2 : Math.random() * 2 + 0.5;
+            this.speedX = (Math.random() - 0.5) * (this.type === 'large' ? 0.8 : 0.5);
+            this.speedY = (Math.random() - 0.5) * (this.type === 'large' ? 0.8 : 0.5);
+            this.opacity = this.type === 'large' ? Math.random() * 0.4 + 0.3 : Math.random() * 0.6 + 0.2;
+            this.fadeSpeed = Math.random() * 0.003 + 0.001;
+            this.pulsePhase = Math.random() * Math.PI * 2;
+            this.color = this.type === 'large' ? '#64D5FF' : '#7AE1FF';
+            this.glowIntensity = this.type === 'large' ? 15 : 8;
+        }
+        
+        update() {
+            // Add subtle floating motion
+            this.x += this.speedX + Math.sin(time * 0.001 + this.pulsePhase) * 0.2;
+            this.y += this.speedY + Math.cos(time * 0.001 + this.pulsePhase) * 0.2;
+            
+            // Pulsing opacity
+            this.opacity = Math.max(0.1, this.opacity - this.fadeSpeed);
+            this.opacity += Math.sin(time * 0.002 + this.pulsePhase) * 0.02;
+            
+            // Reset if too faded
+            if (this.opacity <= 0.1) {
+                this.reset();
+            }
+            
+            // Wrap around edges
+            if (this.x < -50) this.x = canvas.width + 50;
+            if (this.x > canvas.width + 50) this.x = -50;
+            if (this.y < -50) this.y = canvas.height + 50;
+            if (this.y > canvas.height + 50) this.y = -50;
+        }
+        
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, this.opacity);
+            
+            // Outer glow
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+            gradient.addColorStop(0, this.color);
+            gradient.addColorStop(0.3, this.color + '40');
+            gradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Core particle
+            ctx.shadowBlur = this.glowIntensity;
+            ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner bright core
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.globalAlpha = Math.min(1, this.opacity * 0.8);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+    }
+    
+    function drawConnections() {
+        ctx.save();
+        
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 150) {
+                    const opacity = (1 - distance / 150) * 0.3;
+                    ctx.globalAlpha = opacity * Math.min(particles[i].opacity, particles[j].opacity);
+                    ctx.strokeStyle = '#64D5FF';
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        ctx.restore();
+    }
+    
+    function init() {
+        resizeCanvas();
+        
+        // Create enhanced particle system
+        const baseCount = Math.floor((canvas.width * canvas.height) / 8000);
+        const particleCount = Math.min(60, Math.max(25, baseCount));
+        
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+            const type = i < particleCount * 0.2 ? 'large' : 'normal';
+            particles.push(new Particle(type));
+        }
+    }
+    
+    function animate() {
+        time++;
+        
+        // Clear with subtle fade effect for trails
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw connections first (behind particles)
+        drawConnections();
+        
+        // Update and draw particles
+        particles.forEach(particle => {
+            particle.update();
+            particle.draw();
+        });
+        
+        requestAnimationFrame(animate);
+    }
+    
+    // Initialize
+    init();
+    animate();
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        init();
+    });
+    
+    // Enhanced mouse interaction
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        particles.forEach(particle => {
+            const dx = mouseX - particle.x;
+            const dy = mouseY - particle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 150) {
+                const force = (150 - distance) / 150;
+                particle.speedX += (dx / distance) * force * 0.02;
+                particle.speedY += (dy / distance) * force * 0.02;
+                particle.opacity = Math.min(1, particle.opacity + force * 0.01);
+                
+                // Limit speed
+                const maxSpeed = 2;
+                particle.speedX = Math.max(-maxSpeed, Math.min(maxSpeed, particle.speedX));
+                particle.speedY = Math.max(-maxSpeed, Math.min(maxSpeed, particle.speedY));
+            }
+        });
+    });
+    
+    // Touch support for mobile
+    document.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        mouseX = touch.clientX;
+        mouseY = touch.clientY;
+    });
+  </script>
 
   <script>
   function initInstaller() {
