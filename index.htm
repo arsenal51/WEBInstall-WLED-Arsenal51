@@ -210,9 +210,8 @@
     function animate() {
         time++;
         
-        // Clear with subtle fade effect for trails
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Clear canvas completely to remove trail effect
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Draw connections first (behind particles)
         drawConnections();
@@ -233,7 +232,7 @@
     // Handle resize
     window.addEventListener('resize', () => {
         resizeCanvas();
-        init();
+        // Don't regenerate particles on resize to maintain persistence
     });
     
     // Enhanced mouse interaction
