@@ -1,13 +1,19 @@
 /*
- * Copyright (c) 2026 Arsenal51 (https://arsenal51.com)
- * Portions Copyright (c) 2021 Christian Schwinne
- *
- * Project: WEBInstall-WLED-Arsenal51
- * Based on: WLED-WebInstaller
- *
- * This file has been modified for the Arsenal51 Orbiter project.
- * Licensed under the MIT License. See LICENSE file for details.
- */
+ARSENAL51 PROPRIETARY NOTICE
+
+Original portions Copyright (c) 2021 Christian Schwinne
+Modifications & Hardware Integration Copyright (c) 2026 Arsenal51
+
+Project: WEBInstall-WLED-Arsenal51 (Orbiter Project)
+Website: https://arsenal51.com
+
+NOTICE: This file has been modified for the Arsenal51 Orbiter project.
+While the original base code is licensed under the MIT License, all
+modifications, additions, and custom hardware integrations contained in
+this file are PROPRIETARY to Arsenal51. These modifications are NOT
+licensed under MIT and may not be copied, redistributed, or used without
+express written permission from Arsenal51.
+*/
 
 /* Base Reset */
 * {
